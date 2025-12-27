@@ -5,3 +5,11 @@ __pycache__/
 .env
 venv/
 .vscode/
+
+# Antigravity artifacts
+antigravity_task.md
+antigravity_walkthrough.md
+antigravity_implementation_plan.md
+
+# Data files
+*.csv

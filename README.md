@@ -1,13 +1,13 @@
+## Scrapes & Creates CSV of Tidal playlists FROM
+
+### ‣ Yesterday
+### ‣ This Week
+
 ## To Run
 
 ```
 Run the program and open the csv file when complete.
 ```
-
-## Scrapes & Creates CSV of Tidal playlists FROM
-
-### Yesterday
-### This Week
 
 
 ## Playlists Tracked
