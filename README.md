@@ -3,10 +3,10 @@
 ### ‣ Yesterday
 ### ‣ This Week
 
-## To Run
+## Command To Run
 
 ```
-Run the program and open the csv file when complete.
+Run the program and reveal the csv file in Finder when complete.
 ```
 
 
