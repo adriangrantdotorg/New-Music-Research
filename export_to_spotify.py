@@ -4,12 +4,15 @@ import os
 import datetime
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configuration
 # Configuration
-# Hardcoded credentials as requested
-CLIENT_ID = "fe2e26dd70fb4bf2b2ea851acbb60d52"
-CLIENT_SECRET = "047d93443ed24837b525713679e41068"
+CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = "http://127.0.0.1:8888/callback"
 SCOPE = "playlist-modify-public playlist-modify-private"
 
