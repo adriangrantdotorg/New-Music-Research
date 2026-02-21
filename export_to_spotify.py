@@ -99,6 +99,17 @@ def main():
     # 4. Search and Collect URIs
     track_uris = []
     not_found = []
+
+    # Helper to simplify search queries
+    def clean_query(t):
+        return t.replace("ft.", "").replace("feat.", "").split("(")[0].strip()
+
+    def pick_best_track(items):
+        """Prefer the explicit version of a track. Falls back to the first result."""
+        for item in items:
+            if item.get('explicit', False):
+                return item
+        return items[0]  # fallback: no explicit version found
     
     print("\nSearching Spotify for tracks...")
     for track in tracks_to_search:
@@ -108,24 +119,23 @@ def main():
         
         if not title or not artist:
             continue
-            
-        # Helper to simplify search queries
-        def clean_query(t):
-            return t.replace("ft.", "").replace("feat.", "").split("(")[0].strip()
 
-        # Strategy 1: Title + Artist + Album
+        # Strategy 1: Title + Artist + Album (fetch up to 5 to find explicit version)
         query = f"track:{clean_query(title)} artist:{clean_query(artist)} album:{clean_query(album)}"
-        results = sp.search(q=query, limit=1, type='track')
+        results = sp.search(q=query, limit=5, type='track')
         
         # Strategy 2: Title + Artist only
         if not results['tracks']['items']:
-             query = f"track:{clean_query(title)} artist:{clean_query(artist)}"
-             results = sp.search(q=query, limit=1, type='track')
+            query = f"track:{clean_query(title)} artist:{clean_query(artist)}"
+            results = sp.search(q=query, limit=5, type='track')
              
         if results['tracks']['items']:
-            uri = results['tracks']['items'][0]['uri']
+            best = pick_best_track(results['tracks']['items'])
+            uri = best['uri']
+            is_explicit = best.get('explicit', False)
+            explicit_tag = "EXPLICIT" if is_explicit else "CLEAN (no explicit version found)"
             track_uris.append(uri)
-            print(f"  [FOUND] {title} - {artist}")
+            print(f"  [FOUND/{explicit_tag}] {title} - {artist}")
         else:
             not_found.append(f"{title} - {artist}")
             print(f"  [MISSING] {title} - {artist}")
