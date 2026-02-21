@@ -6,9 +6,10 @@ import datetime
 from playwright.async_api import async_playwright
 
 # Generate output filename with timestamp
-# Format: tidal_tracks_SCRAPED MM-dd-yy__h.mm.ss a.csv
+# Format: scraped-files/tidal_tracks_SCRAPED MM-dd-yy__h.mm.ss a.csv
+os.makedirs("scraped-files", exist_ok=True)
 current_time = datetime.datetime.now().strftime("%m-%d-%y__%I.%M.%S %p")
-output_file = f"tidal_tracks_SCRAPED {current_time}.csv"
+output_file = os.path.join("scraped-files", f"tidal_tracks_SCRAPED {current_time}.csv")
 
 def load_playlists(filename="playlists.json"):
     if not os.path.exists(filename):

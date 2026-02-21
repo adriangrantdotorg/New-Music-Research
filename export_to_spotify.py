@@ -18,7 +18,7 @@ SCOPE = "playlist-modify-public playlist-modify-private"
 
 def get_latest_csv():
     """Finds the most recently created tidal_tracks_SCRAPED csv file."""
-    files = glob.glob("tidal_tracks_SCRAPED *.csv")
+    files = glob.glob("scraped-files/tidal_tracks_SCRAPED *.csv")
     if not files:
         return None
     # Sort by modification time (or name since it has timestamp)
