@@ -25,36 +25,40 @@ async def scrape_playlist(page, playlist):
     print(f"Scraping: {playlist['name']} ({playlist['url']})")
     try:
         await page.goto(playlist['url'])
-        # Wait for the tracklist to load. Adjust selector as needed based on Tidal's actual DOM.
-        # Looking for a generic track row or waiting for network idle.
+        # Wait for the tracklist to load
         try:
            await page.wait_for_selector('[data-test="tracklist-row"]', timeout=10000)
         except:
            print(f"  - Timeout waiting for tracklist on {playlist['name']}")
            return []
 
+        # Scroll down to load all tracks (Tidal lazy-loads rows)
+        previous_count = 0
+        for _ in range(20):  # Max 20 scroll attempts
+            current_count = await page.evaluate(
+                'document.querySelectorAll(\'[data-test="tracklist-row"]\').length'
+            )
+            if current_count == previous_count:
+                break  # No new rows loaded, we've reached the end
+            previous_count = current_count
+            await page.evaluate('window.scrollBy(0, 1000)')
+            await asyncio.sleep(1)
+
         # Extract tracks
-        # This evaluation script runs in the browser context
         tracks_data = await page.evaluate('''() => {
             const tracks = [];
-            // Using the selector found in debugging: data-test="tracklist-row" for rows
             const rows = document.querySelectorAll('[data-test="tracklist-row"]');
             
             rows.forEach(row => {
-                // Selector found in debugging: data-test="track-row-date-added"
                 const dateAddedCell = row.querySelector('[data-test="track-row-date-added"]');
                 if (!dateAddedCell) return;
                 
                 const dateText = dateAddedCell.innerText.trim();
                 const lowerDateText = dateText.toLowerCase();
                 
-                if (lowerDateText === "yesterday" || lowerDateText === "this week") {
+                if (lowerDateText === "today" || lowerDateText === "yesterday" || lowerDateText === "this week") {
                     const titleElement = row.querySelector('[data-test="table-row-title"] [data-test="table-cell-title"]');
-                    
-                    // Artist selector update: inside ._artistColumn_... -> span -> a
                     const artistElement = row.querySelector('[data-test="track-row-artist"] a'); 
-                    
-                    // Album selector update: inside ._albumColumn_... -> a
                     const albumElement = row.querySelector('[data-test="track-row-album"] a');
                     
                     tracks.push({

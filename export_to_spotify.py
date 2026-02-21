@@ -131,25 +131,8 @@ def main():
             print(f"  [MISSING] {title} - {artist}")
 
     # 5. Create Playlist
-    
-    # Extract date part from filename "tidal_tracks_SCRAPED 01-10-26__..."
-    try:
-        # Expected: tidal_tracks_SCRAPED 01-10-26__08.39.08 PM.csv
-        base = os.path.basename(csv_file)
-        # removes prefix "tidal_tracks_SCRAPED " (21 chars)
-        # removes suffix "__..."
-        # Example: 01-10-26__08.39.08 PM.csv
-        # We want: 01-10-26
-        
-        # Split by "__" to separate date from time
-        parts = base.replace("tidal_tracks_SCRAPED ", "").split("__")
-        date_part = parts[0]
-        
-        playlist_name = f"🟣 {date_part} Queue 🟣"
-    except:
-        # Fallback
-        current_date = datetime.datetime.now().strftime("%m-%d-%y")
-        playlist_name = f"🟣 {current_date} Queue 🟣"
+    current_date = datetime.datetime.now().strftime("%m-%d-%y")
+    playlist_name = f"🪁 DX {current_date}"
     
     print(f"\nCreating playlist: {playlist_name}")
     try:
