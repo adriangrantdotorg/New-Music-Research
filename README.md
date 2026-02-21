@@ -19,7 +19,7 @@ That's it. The script handles everything automatically from start to finish.
 1. **Tidal is scraped** — every playlist in `playlists.json` is visited and checked for tracks added **Today**, **Yesterday**, or **This Week**
 2. **A CSV is saved** — a timestamped file is created in the `scraped-files` folder, e.g.:
    ```
-   scraped-files/tidal_tracks_SCRAPED 02-20-26__10.15.00 PM.csv
+   scraped-files/SCRAPED 02-20-26__10.15.00 PM.csv
    ```
 3. **A Spotify playlist is created** — a new private playlist is added to your Spotify account named:
    ```
