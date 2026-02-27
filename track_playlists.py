@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import datetime
+import subprocess
 from playwright.async_api import async_playwright
 
 # Generate output filename with timestamp
@@ -10,6 +11,15 @@ from playwright.async_api import async_playwright
 os.makedirs("scraped-files", exist_ok=True)
 current_time = datetime.datetime.now().strftime("%m-%d-%y__%I.%M.%S %p")
 output_file = os.path.join("scraped-files", f"SCRAPED {current_time}.csv")
+
+def trigger_km_macro(uuid):
+    """Triggers a Keyboard Maestro macro by its UUID using osascript."""
+    script = f'tell application "Keyboard Maestro Engine" to do script "{uuid}"'
+    try:
+        subprocess.run(["osascript", "-e", script], check=True)
+        print(f"Successfully triggered KM macro: {uuid}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to trigger KM macro: {e}")
 
 def load_playlists(filename="playlists.json"):
     if not os.path.exists(filename):
@@ -129,7 +139,6 @@ async def main():
         
         # Trigger Spotify Export
         print("\n--- Starting Spotify Export ---")
-        import subprocess
         try:
             subprocess.run(["python3", "export_to_spotify.py", output_file], check=True)
         except subprocess.CalledProcessError as e:
@@ -145,6 +154,9 @@ async def main():
             dict_writer = csv.DictWriter(f, fieldnames=keys)
             dict_writer.writeheader()
         print(f"Created empty {output_file}")
+
+    # Trigger Keyboard Maestro macro
+    trigger_km_macro("2F8301F2-67D8-4976-8A97-6A6124C4AE8E")
 
 if __name__ == "__main__":
     asyncio.run(main())
