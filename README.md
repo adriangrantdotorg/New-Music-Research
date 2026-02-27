@@ -26,7 +26,7 @@ That's it. The script handles everything automatically from start to finish.
    🪁 DX 02-20-26
    ```
 4. **All found tracks are added** to that playlist automatically
-5. **A Keyboard Maestro macro is triggered** — UUID `2F8301F2-67D8-4976-8A97-6A6124C4AE8E` is fired via `osascript` at the very end, whether or not any tracks were found
+5. **A Keyboard Maestro macro is triggered** _(optional)_ — if `KM_MACRO_UUID` is set in `.env`, the macro is fired via `osascript` at the very end
 
 > If a track exists on multiple Tidal playlists, duplicates are removed before export.
 
@@ -68,6 +68,7 @@ Create a `.env` file in the project root:
 ```
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
+KM_MACRO_UUID=your_macro_uuid   # optional — omit to skip the KM trigger
 ```
 
 Get these from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).

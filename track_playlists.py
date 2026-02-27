@@ -4,7 +4,10 @@ import json
 import os
 import datetime
 import subprocess
+from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+
+load_dotenv()
 
 # Generate output filename with timestamp
 # Format: scraped-files/SCRAPED MM-dd-yy__h.mm.ss a.csv
@@ -155,8 +158,12 @@ async def main():
             dict_writer.writeheader()
         print(f"Created empty {output_file}")
 
-    # Trigger Keyboard Maestro macro
-    trigger_km_macro("2F8301F2-67D8-4976-8A97-6A6124C4AE8E")
+    # Trigger Keyboard Maestro macro (optional — only runs if KM_MACRO_UUID is set in .env)
+    km_uuid = os.getenv("KM_MACRO_UUID")
+    if km_uuid:
+        trigger_km_macro(km_uuid)
+    else:
+        print("KM_MACRO_UUID not set — skipping Keyboard Maestro trigger.")
 
 if __name__ == "__main__":
     asyncio.run(main())
