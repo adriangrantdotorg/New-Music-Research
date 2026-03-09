@@ -17,6 +17,7 @@ That's it. The script handles everything automatically from start to finish.
 ## ✅ What to Expect
 
 1. **Tidal is scraped** — every playlist in `playlists.json` is visited and checked for tracks added **Today**, **Yesterday**, or **This Week**
+   - All artists on a track are captured (not just the first), so featuring/co-artist info is preserved
 2. **A CSV is saved** — a timestamped file is created in the `scraped-files` folder, e.g.:
    ```
    scraped-files/SCRAPED 02-20-26__10.15.00 PM.csv
@@ -25,9 +26,17 @@ That's it. The script handles everything automatically from start to finish.
    ```
    🪁 DX 02-20-26
    ```
-4. **All found tracks are added** to that playlist automatically
-5. **The playlist opens in the Spotify desktop app** automatically once it's been created
-6. **A Keyboard Maestro macro is triggered** _(optional)_ — if `KM_MACRO_UUID` is set in `.env`, the macro is fired via `osascript` at the very end
+4. **All found tracks are added** to that playlist automatically using a 3-step search strategy:
+   - **Strategy 1**: Title + Artist + Album (most precise)
+   - **Strategy 2**: Title + Artist only
+   - **Strategy 3**: Title only (broadest fallback — catches cases where Tidal/Spotify artist names differ)
+5. **Detailed logging** — each matched track shows what Spotify actually returned, e.g.:
+   ```
+   [FOUND/EXPLICIT] Expectations - Adamn Killa  →  Expectations - Adamn Killa
+   ```
+   This makes it easy to spot cases where the Spotify match is a different version of the song
+6. **The playlist opens in the Spotify desktop app** automatically once it's been created
+7. **A Keyboard Maestro macro is triggered** _(optional)_ — if `KM_MACRO_UUID` is set in `.env`, the macro is fired via `osascript` at the very end
 
 > If a track exists on multiple Tidal playlists, duplicates are removed before export.
 

@@ -46,6 +46,7 @@ async def scrape_playlist(page, playlist):
            print(f"  - Timeout waiting for tracklist on {playlist['name']}")
            return []
 
+
         # Scroll down to load all tracks (Tidal lazy-loads rows)
         previous_count = 0
         for _ in range(20):  # Max 20 scroll attempts
@@ -72,12 +73,13 @@ async def scrape_playlist(page, playlist):
                 
                 if (lowerDateText === "today" || lowerDateText === "yesterday" || lowerDateText === "this week") {
                     const titleElement = row.querySelector('[data-test="table-row-title"] [data-test="table-cell-title"]');
-                    const artistElement = row.querySelector('[data-test="track-row-artist"] a'); 
+                    const artistElements = row.querySelectorAll('[data-test="track-row-artist"] a'); 
                     const albumElement = row.querySelector('[data-test="track-row-album"] a');
+                    const artistNames = Array.from(artistElements).map(a => a.innerText.trim());
                     
                     tracks.push({
                         "Title": titleElement ? titleElement.innerText.trim() : "Unknown Title",
-                        "Artist": artistElement ? artistElement.innerText.trim() : "Unknown Artist",
+                        "Artist": artistNames.length > 0 ? artistNames.join(', ') : "Unknown Artist",
                         "Album": albumElement ? albumElement.innerText.trim() : "Unknown Album",
                         "Date Added": dateText
                     });
