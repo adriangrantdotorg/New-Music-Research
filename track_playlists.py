@@ -35,6 +35,36 @@ def load_playlists(filename="playlists.json"):
             print(f"Error decoding JSON: {e}")
             return []
 
+async def extract_visible_tracks(page):
+    """Extract tracks currently visible in the virtualized DOM."""
+    return await page.evaluate('''() => {
+        const tracks = [];
+        const rows = document.querySelectorAll('[data-test="tracklist-row"]');
+        
+        rows.forEach(row => {
+            const dateAddedCell = row.querySelector('[data-test="track-row-date-added"]');
+            if (!dateAddedCell) return;
+            
+            const dateText = dateAddedCell.innerText.trim();
+            const lowerDateText = dateText.toLowerCase();
+            
+            // Collect ALL tracks — we filter by date below but also need
+            // to know when we've scrolled past the recent section.
+            const titleElement = row.querySelector('[data-test="table-row-title"] [data-test="table-cell-title"]');
+            const artistElements = row.querySelectorAll('[data-test="track-row-artist"] a'); 
+            const albumElement = row.querySelector('[data-test="track-row-album"] a');
+            const artistNames = Array.from(artistElements).map(a => a.innerText.trim());
+            
+            tracks.push({
+                "Title": titleElement ? titleElement.innerText.trim() : "Unknown Title",
+                "Artist": artistNames.length > 0 ? artistNames.join(', ') : "Unknown Artist",
+                "Album": albumElement ? albumElement.innerText.trim() : "Unknown Album",
+                "Date Added": dateText
+            });
+        });
+        return tracks;
+    }''')
+
 async def scrape_playlist(page, playlist):
     print(f"Scraping: {playlist['name']} ({playlist['url']})")
     try:
@@ -46,49 +76,47 @@ async def scrape_playlist(page, playlist):
            print(f"  - Timeout waiting for tracklist on {playlist['name']}")
            return []
 
+        # Give the DOM a moment to fully render after initial load
+        await asyncio.sleep(1)
 
-        # Scroll down to load all tracks (Tidal lazy-loads rows)
-        previous_count = 0
-        for _ in range(20):  # Max 20 scroll attempts
-            current_count = await page.evaluate(
-                'document.querySelectorAll(\'[data-test="tracklist-row"]\').length'
-            )
-            if current_count == previous_count:
-                break  # No new rows loaded, we've reached the end
-            previous_count = current_count
-            await page.evaluate('window.scrollBy(0, 1000)')
-            await asyncio.sleep(1)
+        # Tidal uses a virtualized list: only ~16-18 rows exist in the DOM
+        # at any given time. We must scroll the #main container (not window)
+        # and collect tracks at each scroll position, deduplicating by key.
+        seen_keys = set()
+        all_tracks = []
+        no_new_tracks_count = 0
 
-        # Extract tracks
-        tracks_data = await page.evaluate('''() => {
-            const tracks = [];
-            const rows = document.querySelectorAll('[data-test="tracklist-row"]');
-            
-            rows.forEach(row => {
-                const dateAddedCell = row.querySelector('[data-test="track-row-date-added"]');
-                if (!dateAddedCell) return;
-                
-                const dateText = dateAddedCell.innerText.trim();
-                const lowerDateText = dateText.toLowerCase();
-                
-                if (lowerDateText === "today" || lowerDateText === "yesterday" || lowerDateText === "this week") {
-                    const titleElement = row.querySelector('[data-test="table-row-title"] [data-test="table-cell-title"]');
-                    const artistElements = row.querySelectorAll('[data-test="track-row-artist"] a'); 
-                    const albumElement = row.querySelector('[data-test="track-row-album"] a');
-                    const artistNames = Array.from(artistElements).map(a => a.innerText.trim());
-                    
-                    tracks.push({
-                        "Title": titleElement ? titleElement.innerText.trim() : "Unknown Title",
-                        "Artist": artistNames.length > 0 ? artistNames.join(', ') : "Unknown Artist",
-                        "Album": albumElement ? albumElement.innerText.trim() : "Unknown Album",
-                        "Date Added": dateText
-                    });
-                }
-            });
-            return tracks;
-        }''')
-        
-        print(f"  - Found {len(tracks_data)} matching tracks.")
+        for scroll_attempt in range(50):  # Max 50 scroll attempts (handles 60+ track playlists)
+            # Extract whatever tracks are currently in the DOM
+            visible = await extract_visible_tracks(page)
+
+            new_this_round = 0
+            for t in visible:
+                key = (t["Title"], t["Artist"])
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    all_tracks.append(t)
+                    new_this_round += 1
+
+            if new_this_round == 0:
+                no_new_tracks_count += 1
+                if no_new_tracks_count >= 3:
+                    break  # Three consecutive scrolls with no new tracks — we're at the end
+            else:
+                no_new_tracks_count = 0
+
+            # Scroll the #main container (Tidal's actual scrollable element)
+            await page.evaluate('document.getElementById("main").scrollBy(0, 600)')
+            await asyncio.sleep(0.8)
+
+        # Filter to only recent tracks (today / yesterday / this week)
+        recent_keywords = {"today", "yesterday", "this week"}
+        tracks_data = [
+            t for t in all_tracks
+            if t["Date Added"].strip().lower() in recent_keywords
+        ]
+
+        print(f"  - Scanned {len(all_tracks)} total tracks, {len(tracks_data)} are recent.")
         # Add source playlist to each track
         for track in tracks_data:
             track["Source Playlist"] = playlist['name']
@@ -108,7 +136,7 @@ async def main():
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={'width': 1280, 'height': 800})
+        context = await browser.new_context(viewport={'width': 1920, 'height': 1080})
         page = await context.new_page()
 
         for playlist in playlists:

@@ -1,3 +1,4 @@
+import base64
 import csv
 import glob
 import os
@@ -15,7 +16,8 @@ load_dotenv()
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = "http://127.0.0.1:8888/callback"
-SCOPE = "playlist-modify-public playlist-modify-private"
+SCOPE = "playlist-modify-public playlist-modify-private ugc-image-upload"
+ARTWORK_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Playlist-Artwork.jpg")
 
 def get_latest_csv():
     """Finds the most recently created SCRAPED csv file."""
@@ -211,6 +213,15 @@ def main():
     try:
         playlist = spotify_call(sp.user_playlist_create, user_id, playlist_name, public=False)
         playlist_id = playlist['id']
+
+        # Upload custom artwork
+        if os.path.exists(ARTWORK_PATH):
+            with open(ARTWORK_PATH, 'rb') as img_file:
+                image_b64 = base64.b64encode(img_file.read()).decode('utf-8')
+            spotify_call(sp.playlist_upload_cover_image, playlist_id, image_b64)
+            print("  🎨 Artwork uploaded.")
+        else:
+            print(f"  ⚠️  Artwork not found at {ARTWORK_PATH} — skipping.")
         
         # 6. Add Tracks
         if track_uris:
